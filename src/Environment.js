@@ -1,6 +1,7 @@
-function Constant(label, free=true) {
+function Constant(label, type, trait = undefined) {
     this.label = label;
-    this.free = free;
+    this.type = type;
+    this.trait = trait;
 }
 
 function Statement(sentence, label) {
@@ -12,46 +13,28 @@ function Statement(sentence, label) {
     };
 }
 
-function Environment(parent=undefined, label=undefined) {
-    this.label = parent? label: "main";
+function Environment(parent = undefined, label = undefined) {
+    this.label = parent ? label : "main";
     this.parent = parent;
     this.statements = {};
     this.environments = {};
     this.constants = {};
     this.assumptions = [];
     this.addAssumption = function (sentence, label) {
-        if (this.statements[label] != undefined) {
-            throw new Error("labelAlreadyExists");
-        }
-        this.statements[label] = new Statement(sentence, label);
-        this.statements[label].proof.type = "Asumption";
-        this.assumptions.push(this.statements[label]);
-        return this.statements[label];
+        newStatement = new Statement(sentence, label);
+        newStatement.proof.type = "Asumption";        
+        this.assumptions.push(newStatement);
+        this.addStatement(newStatement);
+        return newStatement;
     }
-    this.createSubEnvironment = function(label) {
-        if (this.statements[label] != undefined) {
-            throw new Error("labelAlreadyExists");
+    this.createSubEnvironment = function (label) {
+        if (this.environments[label] != undefined) {
+            throw new Error("an environment with that label already exists");
         }
         newEnvironment = new Environment(this, label);
         this.environments[label] = newEnvironment;
     }
-    this.borrow = function(reference) {
-        if(reference.slice(0,2) == "<\\") {
-            var statement = this.parent.borrow(reference.slice(2));
-        } else {
-            return this.statements[reference];
-        }
-        var borrowLabel = reference.split("<\\").join("<")
-        var borrowedStatement = new Statement(
-            statement.sentence,
-            borrowLabel
-        );
-        borrowedStatement.proof.type = "borrowing";
-        borrowedStatement.proof.arguments = reference;
-        this.statements[borrowLabel] = borrowedStatement;
-        return borrowedStatement;
-    }
-    this.getDependencies = function(reference) {
+    this.getDependencies = function (reference) {
         var path = reference.split("\\");
         path.reverse();
         var output = [];
@@ -62,25 +45,106 @@ function Environment(parent=undefined, label=undefined) {
         }
         return output;
     }
-    this.getStatement = function(reference) {
+    this.statementIsInContext = function (label, searchDirection = "both") {
+        var output = this.statements[label] != undefined;
+        if (searchDirection == "up" || searchDirection == "both") {
+            if (this.parent != undefined) {
+                output ||= this.parent.statementIsInContext(label, "up");
+            }
+        }
+        if (searchDirection == "down" || searchDirection == "both") {
+            Object.values(this.environments).forEach(e => {
+                output ||= e.statementIsInContext(label, "down");
+            });
+        }
+        return output;
+    }
+    this.constantIsInContext = function(label, searchDirection = "both") {
+        var output = this.constants[label] != undefined;
+        if (searchDirection == "up" || searchDirection == "both") {
+            if (this.parent != undefined) {
+                output ||= this.parent.constantIsInContext(label, "up");
+            }
+        }
+        if (searchDirection == "down" || searchDirection == "both") {
+            Object.values(this.environments).forEach(e => {
+                output ||= e.constantIsInContext(label, "down");
+            });
+        }
+        return output;    
+    }
+    this.addStatement = function (statement) {
+        var label = statement.label;
+        if (!this.statementIsInContext(label)) {
+            this.statements[label] = statement;
+        } else {
+            throw new Error("a statement with that label is already in context");
+        }
+    }
+    this.addConstant = function (constant) {
+        var label = constant.label;
+        if (!this.constantIsInContext(label)) {
+            this.constants[label] = constant;
+        } else {
+            throw new Error("a constant with that label is already in context");
+        }
+    }
+    this.getStatement = function (reference, restriction = "none") {
         var path = reference.split("\\");
-        var environmentReference = path.slice(0,-1).join("\\");
-        var environment = this.getEnvironmentFromRef(environmentReference);
-        var output = environment.statements[path.pop()];
+        var statementLabel = path.pop();
+        var environment = (path.length == 0) ? this : this.getEnvironmentFromRef(path.join("\\"), restriction);
+        var output = environment.statements[statementLabel];
         if (output == undefined) {
             throw new Error("invalid Statement reference");
         }
         return output;
     }
-    this.getEnvironmentFromRef = function(reference) {
+    this.getConstant = function (reference, restriction = "none") {
+        console.log(reference)
+        var path = reference.split("\\");
+        var constantLabel = path.pop();
+        var environment = (path.length == 0) ? this : this.getEnvironmentFromRef(path.join("\\"), restriction);
+        var output = environment.constants[constantLabel];
+        if (output == undefined) {
+            throw new Error("invalid Statement reference");
+        }
+        return output;
+    }
+    this.getLabeledStatement = function (label) {
+        var thisEnvironment = this;
+        while (thisEnvironment != undefined) {
+            if (thisEnvironment.statements[label] != undefined) {
+                return thisEnvironment.statements[label];
+            }
+            thisEnvironment = thisEnvironment.parent;
+        }
+        return undefined;
+    }
+    this.getLabeledConstant = function (label) {
+        var thisEnvironment = this;
+        while (thisEnvironment != undefined) {
+            if (thisEnvironment.constants[label] != undefined) {
+                return thisEnvironment.constants[label];
+            }
+            thisEnvironment = thisEnvironment.parent;
+        }
+        return undefined;
+    }
+    this.getEnvironmentFromRef = function (reference, restriction = "none") {
         var path = reference.split("\\");
         path.reverse();
         var thisEnvironment = this;
         while (path.length > 0) {
             nextEnvironmentLabel = path.pop();
             if (nextEnvironmentLabel == "<") {
+                if (restriction == "onlyDown") {
+                    throw new Error("reference doesn't follow restrictions");
+                }
                 thisEnvironment = thisEnvironment.parent
             } else {
+                if (restriction == "onlyUp") {
+                    throw new Error("reference doesn't follow restrictions");
+                }
                 thisEnvironment = thisEnvironment.environments[nextEnvironmentLabel];
                 if (thisEnvironment == undefined) {
                     throw new Error("invalid Environment reference");
@@ -89,10 +153,25 @@ function Environment(parent=undefined, label=undefined) {
         }
         return thisEnvironment;
     }
-    this.squash = function(reference, newLabel) {
+    this.getReferenceFromUpwardEnvironment = function(reference, environment) {
+        var path = reference.split("\\");
+        var label = path.pop();
+        var prefix = "";
+        thisEnvironment = this;
+        while (thisEnvironment != environment) {
+            if (path.length > 0) {
+                path.pop();
+            } else {
+                prefix = thisEnvironment.label + "\\" + prefix;
+            }
+            thisEnvironment = thisEnvironment.parent;
+        }
+        return prefix + path.join("\\") + "\\" + label;
+    }
+    this.squash = function (reference, newLabel) {
         var dependencies = this.getDependencies(reference);
-        var environment = this.getEnvironmentFromRef(reference.split("\\").slice(0,-1).join("\\"));
-        var statement = this.getStatement(reference);
+        var environment = this.getEnvironmentFromRef(reference.split("\\").slice(0, -1).join("\\"), "onlyDown");
+        var statement = this.getStatement(reference, "onlyDown");
         if (dependencies.length == 0) {
             var sentence = statement.sentence;
         } else if (dependencies.length == 1) {
@@ -117,24 +196,25 @@ function Environment(parent=undefined, label=undefined) {
             );
         }
 
-        freeVars = [];
+        var freeVars = [];
+        var definedVars = [];
         sentence.vars.forEach(variable => {
-            constant = environment.constants[variable];
-            if (this.constants[variable] == undefined) {
-                if (constant.free) {
+            var constant = environment.getLabeledConstant(variable);
+            if (!this.constantIsInContext(variable, "up")) {
+                if (constant.type == "free") {
                     freeVars.push(variable);
                 } else {
-                    this.constants[variable] = new Constant(
-                        variable,
-                        false
-                    );
+                    definedVars.push(variable);
                 }
-                
             }
         });
 
         while (freeVars.length > 0) {
             sentence = Formula.all(sentence, freeVars.pop());
+        }
+
+        while (definedVars.length > 0) {
+            sentence = Formula.exists(sentence, definedVars.pop());
         }
 
         var squashedStatement = new Statement(
@@ -143,24 +223,21 @@ function Environment(parent=undefined, label=undefined) {
         );
         squashedStatement.proof.type = "squash";
         squashedStatement.proof.arguments = reference;
-        this.statements[newLabel] = squashedStatement;
+        this.addStatement(squashedStatement);
     }
-    this.and = function (label1, label2, newLabel = "") {
-        if (newLabel == "") {
-            newLabel += "and(" + label1 + "," + label2 + ")"
-        }
-        var sentence1 = this.statements[label1].sentence;
-        var sentence2 = this.statements[label2].sentence;
+    this.and = function (ref1, ref2, newLabel) {
+        var sentence1 = this.getLabeledStatement(ref1).sentence;
+        var sentence2 = this.getLabeledStatement(ref2).sentence;
         var newStatement = new Statement(
             Formula.and(sentence1, sentence2),
             newLabel
         );
         newStatement.proof.type = "and";
-        newStatement.proof.arguments = [label1, label2];
-        this.statements[newLabel] = newStatement;
+        newStatement.proof.arguments = [ref1, ref2];
+        this.addStatement(newStatement);
     }
     this.contrapositive = function (reference, label) {
-        var statement = this.statements[reference];
+        var statement = this.getLabeledStatement(reference);
         if (statement.sentence.type != "implies") {
             throw new Error("not implication statement");
         }
@@ -173,23 +250,23 @@ function Environment(parent=undefined, label=undefined) {
         );
         newStatement.proof.type = "contra";
         newStatement.proof.arguments = reference;
-        this.statements[label] = newStatement;
+        this.addStatement(newStatement);
     }
-    this.impliesTrue = function(reference, sentence, label) {
+    this.impliesTrue = function (reference, sentence, label) {
         var newStatement = new Statement(
             Formula.implies(
                 sentence,
-                this.statements[reference].sentence,
+                this.getLabeledStatement(reference).sentence,
             ),
             label
         );
         newStatement.proof.type = "impTrue";
         newStatement.proof.arguments = reference;
-        this.statements[label] = newStatement;
+        this.addStatement(newStatement);
     }
-    this.modusPonens = function (reference1, reference2, label) {
-        var statement1 = this.statements[reference1];
-        var statement2 = this.statements[reference2];
+    this.modusPonens = function (ref1, ref2, label) {
+        var statement1 = this.getLabeledStatement(ref1);
+        var statement2 = this.getLabeledStatement(ref2);
         if (statement2.sentence.type != "implies") {
             throw new Error("not implication");
         }
@@ -201,10 +278,10 @@ function Environment(parent=undefined, label=undefined) {
             label
         );
         newStatement.proof.type = "modusPonens";
-        newStatement.proof.argument = [reference1, reference2];
-        this.statements[label] = newStatement;
+        newStatement.proof.argument = [ref1, ref2];
+        this.addStatement(newStatement);
     }
-    this.getPath = function() {
+    this.getPath = function () {
         output = this.label;
         thisEnvironment = this;
         while (thisEnvironment.parent != undefined) {
@@ -213,46 +290,50 @@ function Environment(parent=undefined, label=undefined) {
         }
         return output;
     }
-    this.matchAssumption = function(label, reference) {
+    this.matchAssumption = function (label, reference) {
         var parentStatement = this.getStatement(reference);
         var labeledStatement = this.statements[label];
-        if(Formula.mathches(parentStatement.sentence, labeledStatement.sentence)) {
+        if (Formula.matches(parentStatement.sentence, labeledStatement.sentence)) {
             labeledStatement.proof.type = "borrowing"
             labeledStatement.proof.arguments = reference;
         }
     }
     this.addConstantFromExistential = function (reference, label, definingTraitLabel) {
-        var existential = this.statements[reference];
+        var existential = this.getLabeledStatement(reference);
         if (existential.sentence.type != "exists") {
             throw new Error("not existential sentence");
         }
-        this.constants[label] = new Constant(label, false);
+        this.addConstant(new Constant(
+            label,
+            "existential",
+            reference
+        ));
         var definingTrait = new Statement(
             existential.sentence.f.replacevars(existential.sentence.v, label),
-            definingTraitLabel
+            definingTraitLabel,
+            reference
         );
         definingTrait.proof.type = "Extantiation";
         definingTrait.proof.arguments = reference;
-        this.statements[definingTraitLabel] = definingTrait;
+        this.addStatement(definingTrait);
     }
     this.addFreeConstant = function (label) {
-        this.constants[label] = new Constant(label);
+        this.addConstant(new Constant(label, "free"));
     }
-    this.applyUniversalToConstant = function (reference, constantName, label) {
-        var universal = this.statements[reference];
+    this.applyUniversalToConstant = function (reference, constantRef, label) {
+        var universal = this.getLabeledStatement(reference);
         if (universal.sentence.type != "all") {
             throw new Error("not universal sentence");
         }
-        if (this.constants[constantName] == undefined) {
+        if (this.getLabeledConstant(constantRef) == undefined) {
             throw new Error("constant not in context");
         }
         newStatement = new Statement(
-            universal.sentence.f.replacevars(universal.sentence.v, constantName),
+            universal.sentence.f.replacevars(universal.sentence.v, constantRef),
             label
         );
         newStatement.proof.type = "universal"
         newStatement.proof.arguments = reference;
-        this.statements[label] = newStatement;
-
+        this.addStatement(newStatement);
     }
 }
