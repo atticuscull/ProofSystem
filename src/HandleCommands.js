@@ -201,11 +201,6 @@ function enterCommand(command) {
             argument = argument.split(" ").join("");
             setNewCurrent(currentEnvironment.getEnvironmentFromRef(argument));
             break;
-        case "borrowStatement":
-            argument = argument.split(" ").join("");
-            currentEnvironment.borrow(argument);
-            currentEnvironment.handler.refreshPath(argument.split("\\").slice(0,-1).join("\\"));
-            break;
         case "preset":
             argument = argument.split(" ").join("");
             enterCommand(presets[argument]);

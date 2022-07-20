@@ -115,7 +115,7 @@ Formula = {
         };
     },
     exists: function (f, variable) {
-        vars = duplicate(f.vars);
+        var vars = duplicate(f.vars);
         vars.delete(variable);
         return {
             type: "exists",
@@ -131,7 +131,7 @@ Formula = {
         };
     },
     all: function (f, variable) {
-        vars = duplicate(f.vars);
+        var vars = duplicate(f.vars);
         vars.delete(variable);
         return {
             type: "all",
