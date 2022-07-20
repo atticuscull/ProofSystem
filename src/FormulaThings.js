@@ -147,6 +147,9 @@ Formula = {
         };
     },
     not: function (f) {
+        if (f.type == "not") {
+            return f.f;
+        }
         return {
             type: "not",
             f: f,
