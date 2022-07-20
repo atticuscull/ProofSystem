@@ -240,6 +240,12 @@ function enterCommand(command) {
             currentEnvironment.applyUniversalToConstant(reference, constantName, label);
             currentEnvironment.handler.refreshBoth();
             break;
+        case "contra":
+            var [reference, label] = argument.split(" as ");
+            label = label.split(" ").join("");
+            reference = reference.split(" ").join("");
+            currentEnvironment.contrapositive(reference, label);
+            currentEnvironment.handler.refreshStatements();
         default:
             return false;        
     }

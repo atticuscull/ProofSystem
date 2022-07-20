@@ -157,7 +157,22 @@ function Environment(parent=undefined, label=undefined) {
         newStatement.proof.type = "and";
         newStatement.proof.arguments = [label1, label2];
         this.statements[newLabel] = newStatement;
-
+    }
+    this.contrapositive = function (reference, label) {
+        var statement = this.statements[reference];
+        if (statement.sentence.type != "implies") {
+            throw new Error("not implication statement");
+        }
+        newStatement = new Statement(
+            Formula.implies(
+                Formula.not(statement.sentence.f2),
+                Formula.not(statement.sentence.f1),
+            ),
+            label
+        );
+        newStatement.proof.type = "contra";
+        newStatement.proof.arguments = reference;
+        this.statements[label] = newStatement;
     }
     this.getPath = function() {
         output = this.label;
