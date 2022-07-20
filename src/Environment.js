@@ -163,7 +163,7 @@ function Environment(parent=undefined, label=undefined) {
         if (statement.sentence.type != "implies") {
             throw new Error("not implication statement");
         }
-        newStatement = new Statement(
+        var newStatement = new Statement(
             Formula.implies(
                 Formula.not(statement.sentence.f2),
                 Formula.not(statement.sentence.f1),
@@ -171,6 +171,18 @@ function Environment(parent=undefined, label=undefined) {
             label
         );
         newStatement.proof.type = "contra";
+        newStatement.proof.arguments = reference;
+        this.statements[label] = newStatement;
+    }
+    this.impliesTrue = function(reference, sentence, label) {
+        var newStatement = new Statement(
+            Formula.implies(
+                sentence,
+                this.statements[reference].sentence,
+            ),
+            label
+        );
+        newStatement.proof.type = "impTrue";
         newStatement.proof.arguments = reference;
         this.statements[label] = newStatement;
     }

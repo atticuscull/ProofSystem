@@ -246,6 +246,19 @@ function enterCommand(command) {
             reference = reference.split(" ").join("");
             currentEnvironment.contrapositive(reference, label);
             currentEnvironment.handler.refreshStatements();
+            break;
+        case "impT":
+            var [reference, argument] = argument.split(" implies ");
+            var [sentence, label] = argument.split(" as ");
+            label = label.split(" ").join("");
+            reference = reference.split(" ").join("");
+            var cleanedSentence = formulaReplacements(sentence);
+            if (!matchParens(cleanedSentence)) {
+                throw new Error("parenthises don't match");
+            }
+            currentEnvironment.impliesTrue(reference, interpretSentence(cleanedSentence), label);
+            currentEnvironment.handler.refreshStatements();
+            break;
         default:
             return false;        
     }
