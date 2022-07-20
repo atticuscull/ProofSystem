@@ -265,6 +265,12 @@ function enterCommand(command) {
             currentEnvironment.and(ref1, ref2, label);
             currentEnvironment.handler.refreshStatements();
             break;
+        case "modusP":
+            var [argument, label] = argument.split(" as ");
+            var [ref1, ref2] = argument.split(" ");
+            currentEnvironment.modusPonens(ref1, ref2, label);
+            currentEnvironment.handler.refreshStatements();
+            break;
         default:
             return false;        
     }
@@ -274,7 +280,7 @@ function enterCommand(command) {
 }
 
 function cleanForHTML(string) {
-    return string.split("<").join("&lt").split(">").join("&gt")
+    return string.split("<").join("&lt;").split(">").join("&gt;")
 }
 
 commandLine.addEventListener("keypress", function(event) {
@@ -302,5 +308,6 @@ commandLine.addEventListener("keypress", function(event) {
 var presets = {
     ADDEXTENSIONALITY: "assume (\\A x)((\\A y)( ((\\A z)( ((z \\in x) \\imp (z \\in y)) \\and ((z \\in y) \\imp (z \\in x)) )) \\imp (x=y) )) as ext",
     ADDUNION: "assume (\\A X)((\\E U)( (\\A z) (((z \\in U) \\imp ((\\E x) ((x \\in X) \\and (z \\in x)))) \\and (((\\E x) ((x \\in X) \\and (z \\in x))) \\imp (z \\in U))) )) as union",
-    EXISTSELEMENT: "assume (\\E x)(x=x)"
+    EXISTSELEMENT: "assume (\\E x)(x=x)",
+    EMPTYSET: "assume (\\E x)((\\A y)(\\n (y\\in x))) as emptyset"
 }

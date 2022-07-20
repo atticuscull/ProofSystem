@@ -120,15 +120,16 @@ function Environment(parent=undefined, label=undefined) {
         freeVars = [];
         sentence.vars.forEach(variable => {
             constant = environment.constants[variable];
-            if (constant.free) {
-                freeVars.push(variable);
-            } else {
-                if (this.constants[variable] == undefined){
+            if (this.constants[variable] == undefined) {
+                if (constant.free) {
+                    freeVars.push(variable);
+                } else {
                     this.constants[variable] = new Constant(
                         variable,
                         false
                     );
                 }
+                
             }
         });
 
@@ -186,6 +187,23 @@ function Environment(parent=undefined, label=undefined) {
         newStatement.proof.arguments = reference;
         this.statements[label] = newStatement;
     }
+    this.modusPonens = function (reference1, reference2, label) {
+        var statement1 = this.statements[reference1];
+        var statement2 = this.statements[reference2];
+        if (statement2.sentence.type != "implies") {
+            throw new Error("not implication");
+        }
+        if (!Formula.matches(statement2.sentence.f1, statement1.sentence)) {
+            throw new Error("statement and hypothesis don't match");
+        }
+        newStatement = new Statement(
+            statement2.sentence.f2,
+            label
+        );
+        newStatement.proof.type = "modusPonens";
+        newStatement.proof.argument = [reference1, reference2];
+        this.statements[label] = newStatement;
+    }
     this.getPath = function() {
         output = this.label;
         thisEnvironment = this;
@@ -204,7 +222,7 @@ function Environment(parent=undefined, label=undefined) {
         }
     }
     this.addConstantFromExistential = function (reference, label, definingTraitLabel) {
-        existential = this.statements[reference];
+        var existential = this.statements[reference];
         if (existential.sentence.type != "exists") {
             throw new Error("not existential sentence");
         }
@@ -221,7 +239,7 @@ function Environment(parent=undefined, label=undefined) {
         this.constants[label] = new Constant(label);
     }
     this.applyUniversalToConstant = function (reference, constantName, label) {
-        universal = this.statements[reference];
+        var universal = this.statements[reference];
         if (universal.sentence.type != "all") {
             throw new Error("not universal sentence");
         }
@@ -232,6 +250,8 @@ function Environment(parent=undefined, label=undefined) {
             universal.sentence.f.replacevars(universal.sentence.v, constantName),
             label
         );
+        newStatement.proof.type = "universal"
+        newStatement.proof.arguments = reference;
         this.statements[label] = newStatement;
 
     }
