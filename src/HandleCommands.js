@@ -259,6 +259,12 @@ function enterCommand(command) {
             currentEnvironment.impliesTrue(reference, interpretSentence(cleanedSentence), label);
             currentEnvironment.handler.refreshStatements();
             break;
+        case "and":
+            var [argument, label] = argument.split(" as ");
+            var [ref1, ref2] = argument.split(" ");
+            currentEnvironment.and(ref1, ref2, label);
+            currentEnvironment.handler.refreshStatements();
+            break;
         default:
             return false;        
     }
