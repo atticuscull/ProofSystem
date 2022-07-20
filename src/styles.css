@@ -1,0 +1,99 @@
+.collapser {
+    background-color: #eee;
+    color: #444;
+    cursor: pointer;
+    padding-left: 5px;
+    width: 100%;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 15px;
+    margin-left: 5px;
+    background-color: #ccc;
+}
+
+
+.current {
+    color: blue;
+}
+
+/* Style the collapsible content. Note: hidden by default */
+.wrapper {
+    display: block;
+    overflow: hidden;
+    background-color: #f1f1f1;
+    margin-left: 5px;
+    border-left: 2px solid #ccc;
+}
+
+.statementsHeader {
+    display: none;
+    font-size: 10;
+}
+
+.constantsHeader {
+    display: none;
+}
+
+#mainContainer {
+    flex-direction: row;
+    background-color: bisque;
+    height: 100%;
+}
+
+#leftSide {
+    background-color: blue;
+    width: 70%;
+    height: 100%;
+    float: left;
+}
+
+
+#rightSide {
+    background-color: red;
+    width: 30%;
+    height: 100%;
+    float: left;
+    overflow-x: hidden;
+    
+    
+}
+
+#commandLogContainer {
+    overflow-x: hidden;
+    overflow-y: auto;
+    height: 50%;
+    width: 100%;
+    background-color: green;
+    position: relative;
+    align-items: flex-start;
+    display: flex;
+    flex-direction: column-reverse;
+    word-wrap: normal;
+}
+
+#commandLog {
+    width: 100%;
+    background-color: aqua;
+}
+
+#commandLine {
+    width: 100%;
+    height: 80px;
+    align-items: center;
+    border: none;
+    word-wrap: break-word;
+    resize: vertical;
+    overflow: visible;
+
+}
+
+#commandLine:focus {
+    outline: none;
+}
+
+#commandLineWrapper {
+    padding-right: 0px;
+}
+
+
