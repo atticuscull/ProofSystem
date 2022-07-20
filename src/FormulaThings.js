@@ -81,7 +81,7 @@ Formula = {
             replacevars: function (oldvar, newvar) {
                 return Formula.and(
                     f1.replacevars(oldvar, newvar),
-                    f1.replacevars(oldvar, newvar),
+                    f2.replacevars(oldvar, newvar),
                 );
             },
         };
@@ -95,7 +95,7 @@ Formula = {
             replacevars: function (oldvar, newvar) {
                 return Formula.or(
                     f1.replacevars(oldvar, newvar),
-                    f1.replacevars(oldvar, newvar),
+                    f2.replacevars(oldvar, newvar),
                 );
             },
         };
@@ -107,9 +107,9 @@ Formula = {
             f2: f2,
             vars: union(f1.vars, f2.vars),
             replacevars: function (oldvar, newvar) {
-                return Formula.or(
+                return Formula.implies(
                     f1.replacevars(oldvar, newvar),
-                    f1.replacevars(oldvar, newvar),
+                    f2.replacevars(oldvar, newvar),
                 );
             },
         };
@@ -124,9 +124,9 @@ Formula = {
             vars: vars,
             replacevars: function (oldvar, newvar) {
                 if (variable == oldvar) {
-                    return Formula.exists(f.replacevars(oldvar, newvar), variable);
+                    return Formula.exists(f.replacevars(oldvar, newvar), newvar);
                 }
-                return Formula.exists(f.replacevars(oldvar, newvar), newvar);
+                return Formula.exists(f.replacevars(oldvar, newvar), variable);
             },
         };
     },
@@ -140,9 +140,9 @@ Formula = {
             vars: vars,
             replacevars: function (oldvar, newvar) {
                 if (variable == oldvar) {
-                    return Formula.all(f.replacevars(oldvar, newvar), variable);
+                    return Formula.all(f.replacevars(oldvar, newvar), newvar);
                 }
-                return Formula.all(f.replacevars(oldvar, newvar), newvar);
+                return Formula.all(f.replacevars(oldvar, newvar), variable);
             },
         };
     },
@@ -162,7 +162,7 @@ Formula = {
     isSentence: function (f) {
         return f.vars == Set();
     },
-    mathches: function (f1, f2) {
+    matches: function (f1, f2) {
         return formulaToString(f1) == formulaToString(f2);
     }
 }
@@ -178,8 +178,6 @@ function interpretSentence(inputString) {
         throw new Error("Not valid formula");
     }
     var parts = decomposeByParenthises(inputString);
-    console.log(parts);
-    //console.log(inputString);
     if (parts[0].includes("\u00ac")) {
         return Formula.not(interpretSentence(parts[1]));
     }
