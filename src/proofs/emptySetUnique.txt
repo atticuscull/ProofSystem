@@ -1,5 +1,3 @@
-assume (\A x)((\A y)( ((\A z)( ((z \in x) \imp (z \in y)) \and ((z \in y) \imp (z \in x)) )) \imp (x=y) )) as ext;
-
 assume (\E x)((\A y)(\n (y\in x))) as emptyset;
 instantiate eset from emptyset with empty;
 create esetunique;
