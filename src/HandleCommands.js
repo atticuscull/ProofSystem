@@ -203,6 +203,9 @@ function enterCommand(command) {
             break;
         case "preset":
             argument = argument.split(" ").join("");
+            if (presets[argument] == undefined) {
+                throw new Error("preset not registered");
+            }
             enterCommand(presets[argument]);
             return true;
         case "instantiate":
@@ -305,5 +308,6 @@ var presets = {
     ADDUNION: "assume (\\A X)((\\E U)( (\\A z) (((z \\in U) \\imp ((\\E x) ((x \\in X) \\and (z \\in x)))) \\and (((\\E x) ((x \\in X) \\and (z \\in x))) \\imp (z \\in U))) )) as union",
     EXISTSELEMENT: "assume (\\E x)(x=x)",
     EMPTYSET: "assume (\\E x)((\\A y)(\\n (y\\in x))) as emptyset",
-    ADDPOWERSET: "assume (\\A x)((\\E P)( (\\A z) (((z \\in P) \\imp ((\\A y) ((y \\in z) \\imp (y \\in x)))) \\and (((\\A y) ((y \\in z) \\imp (y \\in x))) \\imp (z \\in P))) )) as powerset;",
+    ADDPOWERSET: "assume (\\A x)((\\E P)( (\\A z) (((z \\in P) \\imp ((\\A y) ((y \\in z) \\imp (y \\in x)))) \\and (((\\A y) ((y \\in z) \\imp (y \\in x))) \\imp (z \\in P))) )) as powerset",
+    ADDPAIRING: "assume (\\A x)((\\A y)( (\\E z)(((x\\in z) \\and (y \\in z)) \\and ((\\A w)( (w \\in z) \\imp ((w = x) \\or (w=y)) )) ) )) as pairing"
 }
