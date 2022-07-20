@@ -28,11 +28,28 @@
 
 .statementsHeader {
     display: none;
-    font-size: 10;
+    font-size: .8em;
+    margin-top: 0px;
+    margin-bottom: 0px;
 }
 
 .constantsHeader {
     display: none;
+    font-size: .8em;
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+.statements {
+    margin-top: 5px;
+    margin-bottom: 0px;
+    margin-left: 5px;
+}
+
+.constants {
+    margin-top: 5px;
+    margin-bottom: 0px;
+    margin-left: 5px;
 }
 
 #mainContainer {
@@ -56,8 +73,8 @@
     height: 100%;
     float: left;
     overflow-x: hidden;
-    
-    
+
+
 }
 
 #commandLogContainer {
@@ -96,5 +113,3 @@
 #commandLineWrapper {
     padding-right: 0px;
 }
-
-
